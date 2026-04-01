@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useExpenses } from "@/context/ExpenseContext";
 import { supportedCurrencies } from "@/utils/currencyConverter";
+import ErrorMessage from "./ErrorMessage";
 
 const CATEGORY_LIMIT = 20;
 const DESCRIPTION_LIMIT = 100;
@@ -19,7 +20,7 @@ export default function AddExpenseForm() {
   const [error, setError] = useState("");
   const { fetchExpenses } = useExpenses();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -74,8 +75,13 @@ export default function AddExpenseForm() {
       <h2 className="text-xl font-playfair font-bold text-[var(--foreground)] mb-6">Record New Expense</h2>
       
       {error && (
-        <div className="mb-6 p-4 text-xs font-bold text-red-500 bg-red-500/10 rounded-lg border border-red-500/20">
-          {error}
+        <div className="mb-6">
+          <ErrorMessage 
+            title="Form Error"
+            message={error}
+            variant="error"
+            compact
+          />
         </div>
       )}
 
