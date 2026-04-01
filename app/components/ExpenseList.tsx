@@ -6,11 +6,13 @@ import { formatDate } from "@/utils/dateHelpers";
 import { convertCurrency, supportedCurrencies } from "@/utils/currencyConverter";
 import { useExpenses } from "@/context/ExpenseContext";
 import { createPortal } from "react-dom";
+import ErrorMessage from "./ErrorMessage";
 
 export default function ExpenseList() {
-  const { expenses, fetchExpenses, updateExpense, loading } = useExpenses();
+  const { expenses, fetchExpenses, updateExpense, loading, error, setError } = useExpenses();
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [displayCurrency, setDisplayCurrency] = useState("USD");
   
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function ExpenseList() {
     try {
       const response = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
       if (response.ok) {
-        await fetchExpenses(sortBy, sortOrder);
+        await fetchExpenses(sortBy, sortOrder, categoryFilter);
         if (drawerData?.id === id) setDrawerData(null);
       }
     } catch (error) {
@@ -70,8 +72,8 @@ export default function ExpenseList() {
   };
 
   useEffect(() => {
-    fetchExpenses(sortBy, sortOrder);
-  }, [sortBy, sortOrder, fetchExpenses]);
+    fetchExpenses(sortBy, sortOrder, categoryFilter);
+  }, [sortBy, sortOrder, categoryFilter, fetchExpenses]);
 
   if (loading && expenses.length === 0) {
     return (
@@ -81,13 +83,33 @@ export default function ExpenseList() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 md:px-0">
+        <ErrorMessage 
+          title="Data Retrieval Error"
+          message={error}
+          variant="error"
+          fullHeight
+          action={{
+            label: "Try Again",
+            onClick: () => {
+              setError(null);
+              fetchExpenses(sortBy, sortOrder);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   const drawerContent = drawerData && (
-    <div className="fixed inset-0 z-[9999] flex justify-end">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-black/40 cursor-pointer" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-md cursor-pointer" 
         onClick={() => setDrawerData(null)}
       />
-      <div className="relative w-full max-w-md bg-[var(--surface)] h-full shadow-2xl p-8 flex flex-col border-l border-[var(--border)] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-[var(--surface)] shadow-2xl p-8 flex flex-col rounded-2xl border border-[var(--border)] overflow-y-auto max-h-[90vh]">
         <div className="flex justify-between items-center mb-8">
           <h3 className="text-xl font-playfair font-bold text-[var(--foreground)] leading-tight">
             {drawerData.mode === "view" ? "Transaction Details" : "Update Transaction"}
@@ -181,29 +203,68 @@ export default function ExpenseList() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[var(--border)] pb-4 gap-4">
         <h2 className="text-2xl font-playfair font-bold text-[var(--foreground)] tracking-tight">Ledger Entries</h2>
-        <div className="flex items-center gap-3 font-inter">
-          <select
-            value={displayCurrency}
-            onChange={(e) => setDisplayCurrency(e.target.value)}
-            className="text-sm font-bold text-[var(--muted)] bg-transparent border-none outline-none cursor-pointer"
-          >
-            {supportedCurrencies.map(curr => <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>)}
-          </select>
+        <div className="flex flex-wrap items-center gap-4 font-inter">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">Show in:</span>
+            <select
+              value={displayCurrency}
+              onChange={(e) => setDisplayCurrency(e.target.value)}
+              className="text-sm font-bold text-[var(--foreground)] bg-transparent border-none outline-none cursor-pointer hover:underline"
+            >
+              {supportedCurrencies.map(curr => <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>)}
+            </select>
+          </div>
+          
           <div className="h-4 w-px bg-[var(--border)]"></div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-sm text-[var(--muted)] bg-transparent border-none outline-none cursor-pointer"
-          >
-            <option value="createdAt" className="bg-[var(--surface)]">Newest</option>
-            <option value="amount" className="bg-[var(--surface)]">Amount</option>
-          </select>
+          
+          <div className="flex items-center gap-2">
+             <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">Cat:</span>
+             <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="text-sm font-bold text-[var(--foreground)] bg-transparent border-none outline-none cursor-pointer hover:underline"
+             >
+                <option value="All" className="bg-[var(--surface)]">All</option>
+                <option value="Food" className="bg-[var(--surface)]">Food</option>
+                <option value="Transport" className="bg-[var(--surface)]">Transport</option>
+                <option value="Rent" className="bg-[var(--surface)]">Rent</option>
+                <option value="Entertainment" className="bg-[var(--surface)]">Entertainment</option>
+                <option value="Utilities" className="bg-[var(--surface)]">Utilities</option>
+                <option value="others" className="bg-[var(--surface)]">Others</option>
+             </select>
+          </div>
+
+          <div className="h-4 w-px bg-[var(--border)]"></div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-sm text-[var(--foreground)] bg-transparent border-none outline-none cursor-pointer"
+            >
+              <option value="createdAt" className="bg-[var(--surface)]">Date Added</option>
+              <option value="amount" className="bg-[var(--surface)]">Amount</option>
+              <option value="date" className="bg-[var(--surface)]">Expense Date</option>
+            </select>
+            <button 
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+              title={sortOrder === "asc" ? "Ascending" : "Descending"}
+            >
+              {sortOrder === "asc" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m19 12-7 7-7-7"/><path d="M12 5v14"/></svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-hidden">
+      <div className="relative">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-[var(--border)]">
@@ -219,17 +280,26 @@ export default function ExpenseList() {
                 <td colSpan={4} className="py-12 text-center text-[var(--muted)] text-sm italic font-inter">No entries recorded.</td>
               </tr>
             ) : (
-              expenses.map((expense: any) => {
+              expenses.map((expense: any, index: number) => {
                 const isSelected = drawerData?.id === expense._id;
                 const convertedAmount = convertCurrency(expense.amount, expense.currency || "USD", displayCurrency);
                 return (
-                  <tr key={expense._id} className={`${isSelected ? 'bg-[var(--surface)]' : 'hover:bg-[var(--surface)]/50'} font-inter`}>
+                  <tr key={expense._id} className={`${isSelected ? 'bg-[var(--surface)]' : 'hover:bg-[var(--surface)]/50'} font-inter transition-colors duration-200`}>
                     <td className="py-5 text-sm text-[var(--foreground)] opacity-80">{formatDate(expense.date)}</td>
                     <td className="py-5">
-                      <span className="text-[11px] font-bold text-[var(--foreground)] bg-[var(--border)]/50 px-2 py-0.5 rounded tracking-wide">{expense.category}</span>
+                      <span className="text-[11px] font-bold text-[var(--foreground)] bg-[var(--border)]/50 px-2.5 py-1 rounded-full tracking-wide">{expense.category}</span>
                     </td>
-                    <td className="py-5 text-right font-playfair font-bold text-[var(--foreground)]">
-                      {formatCurrency(convertedAmount, displayCurrency)}
+                    <td className="py-5 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className="font-playfair font-bold text-[var(--foreground)] text-lg">
+                          {formatCurrency(convertedAmount, displayCurrency)}
+                        </span>
+                        {expense.currency !== displayCurrency && (
+                          <span className="text-[10px] font-medium text-[var(--muted)]">
+                             orig. {formatCurrency(expense.amount, expense.currency)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-5 text-right relative px-2">
                        <button 
@@ -240,7 +310,10 @@ export default function ExpenseList() {
                       </button>
 
                       {activeMenu === expense._id && (
-                        <div ref={menuRef} className="absolute right-0 top-12 w-48 bg-[var(--surface)] border border-[var(--border)] shadow-2xl rounded-lg py-1.5 z-[999] text-left">
+                        <div 
+                          ref={menuRef} 
+                          className={`absolute right-0 ${index >= expenses.length - 1 && expenses.length >= 2 ? 'bottom-full origin-bottom-right' : 'top-12 origin-top-right'} w-48 bg-[var(--surface)] border border-[var(--border)] shadow-2xl rounded-lg z-[999] text-left animate-in fade-in zoom-in-95 duration-200 transition-all`}
+                        >
                           <button onClick={() => openDrawer(expense._id, "view")} className="w-full px-4 py-2 text-xs font-bold text-[var(--foreground)] opacity-80 hover:bg-[var(--border)] flex items-center gap-2 cursor-pointer">
                             <span>View Details</span>
                           </button>
