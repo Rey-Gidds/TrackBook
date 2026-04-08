@@ -11,12 +11,15 @@ const EXCHANGE_RATES: Record<string, number> = {
 
 export function convertCurrency(amount: number, from: string, to: string): number {
   if (from === to) return amount;
+  if (!EXCHANGE_RATES[from] || !EXCHANGE_RATES[to]) {
+    throw new Error("Invalid currency");
+  }
   
   // Convert from input currency to USD first (base)
-  const amountInUSD = amount / (EXCHANGE_RATES[from] || 1);
+  const amountInUSD = amount / EXCHANGE_RATES[from];
   
   // Convert from USD to target currency
-  return amountInUSD * (EXCHANGE_RATES[to] || 1);
+  return amountInUSD * EXCHANGE_RATES[to];
 }
 
 export const supportedCurrencies = Object.keys(EXCHANGE_RATES);
