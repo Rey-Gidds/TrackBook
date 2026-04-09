@@ -33,7 +33,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export const auth = betterAuth({
     database: mongodbAdapter(db, {
-        transaction: false, // Recommended for local/standard MongoDB setups to prevent hangs
+        transaction: true, // Recommended for local/standard MongoDB setups to prevent hangs
     }),
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     secret: process.env.BETTER_AUTH_SECRET,
