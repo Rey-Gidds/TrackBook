@@ -1,6 +1,10 @@
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Expense from "@/models/Expense";
+import ExpenseBook from "@/models/ExpenseBook";
+import User from "@/models/User";
+import { convertCurrency } from "@/utils/currencyConverter";
+import mongoose from "mongoose";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -14,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { amount, currency, category, description, date } = await req.json();
+        const { amount, currency, category, description, date, bookId } = await req.json();
 
         // Server-side validation
         if (Number(amount) > 1000000) {
@@ -28,17 +32,67 @@ export async function POST(req: Request) {
         }
 
         await connectDB();
+        const mongoSession = await mongoose.startSession();
+        mongoSession.startTransaction();
 
-        const expense = await Expense.create({
-            userId: session.user.id,
-            amount: Number(amount),
-            currency: currency || "USD",
-            category,
-            description,
-            date: date ? new Date(date) : new Date(),
-        });
+        try {
+            const user = await User.findById(session.user.id).session(mongoSession);
+            if (!user) {
+                await mongoSession.abortTransaction();
+                mongoSession.endSession();
+                return NextResponse.json({ error: "User not found" }, { status: 401 });
+            }
 
-        return NextResponse.json(expense, { status: 201 });
+            const walletCurrency = user.currency || "INR";
+            const expenseAmountInWalletCurrency = convertCurrency(Number(amount), currency || "USD", walletCurrency);
+            const newBalance = user.walletBalance - expenseAmountInWalletCurrency;
+
+            // Threshold logic: 1000 INR equivalent
+            const thresholdInWalletCurrency = convertCurrency(1000, "INR", walletCurrency);
+
+            if (newBalance < thresholdInWalletCurrency) {
+                await mongoSession.abortTransaction();
+                mongoSession.endSession();
+                return NextResponse.json({ 
+                    error: `Insufficient wallet balance. Minimum threshold is ${thresholdInWalletCurrency.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${walletCurrency}.` 
+                }, { status: 400 });
+            }
+
+            const [expense] = await Expense.create([{
+                userId: session.user.id,
+                bookId: bookId || undefined,
+                amount: Number(amount),
+                currency: currency || "USD",
+                category,
+                description,
+                date: date ? new Date(date) : new Date(),
+            }], { session: mongoSession });
+
+            // Update User wallet balance
+            user.walletBalance = newBalance;
+            await user.save({ session: mongoSession });
+
+            // Add reference to ExpenseBook if it exists
+            if (bookId) {
+                const book = await ExpenseBook.findByIdAndUpdate(bookId, {
+                    $push: { expenses: expense._id }
+                }, { session: mongoSession });
+                
+                if (!book) {
+                    await mongoSession.abortTransaction();
+                    mongoSession.endSession();
+                    return NextResponse.json({ error: "Expense book not found" }, { status: 404 });
+                }
+            }
+
+            await mongoSession.commitTransaction();
+            mongoSession.endSession();
+            return NextResponse.json(expense, { status: 201 });
+        } catch (txnError) {
+            await mongoSession.abortTransaction();
+            mongoSession.endSession();
+            throw txnError;
+        }
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -56,10 +110,28 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const sortOrder = searchParams.get("sort") === "desc" ? -1 : 1;
     const sortBy = searchParams.get("sortBy") || "createdAt";
+    const category = searchParams.get("category") || "All";
+    const bookId = searchParams.get("bookId");
 
     try {
         await connectDB();
-        const expenses = await Expense.find({ userId: session.user.id })
+        
+        let query: any = { userId: session.user.id };
+        
+        if (bookId) {
+            query.bookId = bookId;
+        }
+
+        if (category !== "All") {
+            if (category === "others") {
+                const predefined = ["Food", "Transport", "Rent", "Entertainment", "Utilities"];
+                query.category = { $nin: predefined };
+            } else {
+                query.category = category;
+            }
+        }
+
+        const expenses = await Expense.find(query)
             .sort({ [sortBy]: sortOrder as any });
 
         return NextResponse.json(expenses);
