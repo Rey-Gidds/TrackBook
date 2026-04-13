@@ -1,0 +1,186 @@
+"use client";
+
+import { useSession } from "@/lib/auth-client";
+import { useState } from "react";
+import { useNotification } from "@/context/NotificationContext";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Wallet, User as UserIcon, Plus, Globe } from "lucide-react";
+import Link from "next/link";
+import { useWallet } from "@/context/WalletContext";
+import { supportedCurrencies, convertCurrency } from "@/utils/currencyConverter";
+
+export default function MePage() {
+    const { data: session, isPending, error: sessionError } = useSession();
+    const [amount, setAmount] = useState("");
+    const [loading, setLoading] = useState(false);
+    const { showNotification } = useNotification();
+    const router = useRouter();
+    const { walletBalance, walletCurrency, refetchWallet, setWalletDefaultCurrency } = useWallet();
+    const thresholdInWalletCurrency = convertCurrency(1000, "INR", walletCurrency);
+
+    if (isPending) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[var(--surface-light)]"></div>
+                    <div className="h-4 w-32 bg-[var(--surface-light)] rounded"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (sessionError || !session) {
+        router.push("/sign-in");
+        return null;
+    }
+
+    const { user } = session;
+
+    const handleAddMoney = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+            showNotification("Please enter a valid amount", "error");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch("/api/user/wallet", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: Number(amount) }),
+            });
+
+            if (response.ok) {
+                showNotification("Pocket money added successfully!", "success");
+                setAmount("");
+                // Refetch wallet state to update UI balance instantaneously
+                refetchWallet(); 
+            } else {
+                const data = await response.json();
+                showNotification(data.error || "Failed to add money", "error");
+            }
+        } catch (err) {
+            showNotification("An error occurred", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-20">
+            <header className="px-6 pt-12 pb-8 max-w-4xl mx-auto">
+                <Link href="/" className="inline-flex items-center gap-2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors mb-6 group text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    Back to Journal
+                </Link>
+                <h1 className="text-4xl font-serif font-bold text-[var(--foreground)]">My Account</h1>
+                <p className="text-[var(--muted)] mt-2">Manage your profile and wallet settings.</p>
+            </header>
+
+            <main className="px-6 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Profile Card */}
+                <section className="bg-[var(--surface)] p-8 rounded-2xl border border-[var(--border)] shadow-sm">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-16 h-16 rounded-full bg-[var(--accent-dim)] flex items-center justify-center text-[var(--accent)]">
+                            {user.image ? (
+                                <img src={user.image} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                                <UserIcon className="w-8 h-8" />
+                            )}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold">{user.name}</h2>
+                            <p className="text-[var(--muted)] text-sm">{user.email}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="p-4 bg-[var(--background)] rounded-xl border border-[var(--border)]">
+                            <span className="block text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Account ID</span>
+                            <code className="text-xs break-all">{user.id}</code>
+                        </div>
+                        <div className="p-4 bg-[var(--background)] rounded-xl border border-[var(--border)]">
+                            <span className="block text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Member Since</span>
+                            <span className="text-sm">{new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Wallet Card */}
+                <section className="bg-[var(--surface)] p-8 rounded-2xl border border-[var(--border)] shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                    <Wallet className="w-5 h-5" />
+                                </div>
+                                <h2 className="text-xl font-bold">Wallet</h2>
+                            </div>
+                            <span className="text-xs font-bold px-2 py-1 bg-emerald-500/10 text-emerald-500 rounded uppercase tracking-widest">Active</span>
+                        </div>
+
+                        <div className="mb-8">
+                            <span className="block text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Current Balance</span>
+                            <div className="flex items-baseline justify-between gap-2">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-4xl font-serif font-bold">
+                                        {walletBalance?.toLocaleString(undefined, { maximumFractionDigits: 2 }) || "0"}
+                                    </span>
+                                    <span className="text-lg font-medium text-[var(--muted)]">{walletCurrency}</span>
+                                </div>
+                                <div className="relative group/curr">
+                                   <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--surface-light)] rounded-md border border-[var(--border)] hover:border-[var(--accent)] transition-all cursor-pointer">
+                                        <Globe className="w-3 h-3 text-[var(--muted)]" />
+                                        <select 
+                                            value={walletCurrency}
+                                            onChange={async (e) => {
+                                                const newCurr = e.target.value;
+                                                if (newCurr === walletCurrency) return;
+                                                setLoading(true);
+                                                await setWalletDefaultCurrency(newCurr);
+                                                await refetchWallet();
+                                                setLoading(false);
+                                                showNotification(`Wallet currency changed to ${newCurr}`, "success");
+                                            }}
+                                            className="bg-transparent text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer appearance-none pr-1"
+                                        >
+                                            {supportedCurrencies.map(curr => <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>)}
+                                        </select>
+                                   </div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-[var(--muted)] mt-2 italic">* Minimum threshold of {thresholdInWalletCurrency.toLocaleString(undefined, { maximumFractionDigits: 2 })} {walletCurrency} ({ (1000).toLocaleString() } INR equivalent) required for expenses.</p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleAddMoney} className="space-y-4 pt-6 border-t border-[var(--border)]">
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Add Pocket Money</label>
+                            <div className="flex gap-2">
+                                <div className="flex-grow flex items-center border-b border-[var(--border)] focus-within:border-[var(--accent)] transition-colors">
+                                    <span className="text-[var(--muted)] mr-2 font-medium">{walletCurrency}</span>
+                                    <input 
+                                        type="number" 
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="Enter amount"
+                                        className="w-full py-2 bg-transparent outline-none font-medium"
+                                        min="1"
+                                    />
+                                </div>
+                                <button 
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-6 py-2 bg-[var(--foreground)] text-[var(--background)] rounded-lg font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 shrink-0"
+                                >
+                                    {loading ? "..." : <><Plus className="w-3 h-3" /> Add</>}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+            </main>
+        </div>
+    );
+}
