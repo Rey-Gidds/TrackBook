@@ -50,10 +50,6 @@ export default async function Home() {
         </div>
         
         <Dashboard />
-        
-        <footer className="pt-12 text-center hidden md:block">
-            <p className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-[0.3em]">System V1.0</p>
-        </footer>
       </div>
     </main>
   );
