@@ -1,0 +1,86 @@
+import { auth } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import Room from "@/models/Room";
+import RoomStats from "@/models/RoomStats";
+import User from "@/models/User";
+import mongoose from "mongoose";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+/**
+ * DELETE /api/rooms/[roomId]/leave
+ * User leaves a room. Blocked if the user has any non-zero balances.
+ */
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ roomId: string }> }
+) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { roomId } = await params;
+    await connectDB();
+
+    // Check membership
+    const room = await Room.findById(roomId);
+    if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+
+    const isMember = room.users.some((uid: any) => uid.toString() === session.user.id);
+    if (!isMember) return NextResponse.json({ error: "You are not a member of this room" }, { status: 403 });
+
+    // Guard: check for outstanding balances
+    const stats = await RoomStats.findOne({ roomId, userId: session.user.id }).lean();
+    if (stats) {
+      const hasDebt = stats.balances.some((b: any) => b.amount !== 0);
+      if (hasDebt) {
+        return NextResponse.json(
+          { error: "You cannot leave a room while you have outstanding balances. Please settle all debts first." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const mongoSession = await mongoose.startSession();
+    mongoSession.startTransaction();
+
+    try {
+      const userId = new mongoose.Types.ObjectId(session.user.id);
+
+      // Remove user from room
+      await Room.updateOne(
+        { _id: roomId },
+        { $pull: { users: userId } },
+        { session: mongoSession }
+      );
+
+      // Remove room from user's rooms
+      await User.updateOne(
+        { _id: userId },
+        { $pull: { rooms: new mongoose.Types.ObjectId(roomId) } },
+        { session: mongoSession }
+      );
+
+      // Delete this user's RoomStats
+      await RoomStats.deleteOne({ roomId, userId: session.user.id }, { session: mongoSession });
+
+      // Remove the user from all other members' balances
+      await RoomStats.updateMany(
+        { roomId },
+        { $pull: { balances: { userId } } },
+        { session: mongoSession }
+      );
+
+      await mongoSession.commitTransaction();
+      mongoSession.endSession();
+
+      return NextResponse.json({ message: "You have left the room successfully." });
+    } catch (txErr) {
+      await mongoSession.abortTransaction();
+      mongoSession.endSession();
+      throw txErr;
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
