@@ -6,6 +6,7 @@ import SignOutButton from "@/app/components/SignOutButton";
 import Dashboard from "@/app/components/Dashboard";
 import WalletBalanceDisplay from "@/app/components/WalletBalanceDisplay";
 import AccountSheet from "@/app/components/AccountSheet";
+import { Suspense } from "react";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -49,7 +50,9 @@ export default async function Home() {
           </div>
         </div>
         
-        <Dashboard />
+        <Suspense fallback={<div className="animate-pulse h-64 bg-[var(--surface-light)] rounded-2xl"></div>}>
+          <Dashboard />
+        </Suspense>
       </div>
     </main>
   );

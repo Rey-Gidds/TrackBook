@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useNotification } from "@/context/NotificationContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Wallet, User as UserIcon, Plus, Globe, Camera, Loader2, Edit2, Check, X } from "lucide-react";
@@ -10,7 +10,7 @@ import { useWallet } from "@/context/WalletContext";
 import { supportedCurrencies, convertCurrency } from "@/utils/currencyConverter";
 import { useRef } from "react";
 
-export default function MePage() {
+function MePageContent() {
     const { data: session, isPending, error: sessionError } = useSession();
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
@@ -312,5 +312,20 @@ export default function MePage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function MePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[var(--surface-light)]"></div>
+                    <div className="h-4 w-32 bg-[var(--surface-light)] rounded"></div>
+                </div>
+            </div>
+        }>
+            <MePageContent />
+        </Suspense>
     );
 }
