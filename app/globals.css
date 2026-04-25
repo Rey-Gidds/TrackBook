@@ -33,3 +33,24 @@ body {
     margin: 0;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbar cross-browser while keeping scroll functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;             /* Chrome/Safari/Opera */
+  }
+
+  /* Safe-area padding for notched devices (iOS home bar) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
