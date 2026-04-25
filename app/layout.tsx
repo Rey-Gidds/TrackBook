@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -22,10 +19,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Kharche",
   description: "Manage your multi-currency expenses with style.",
-  icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
-  },
 };
 
 export default function RootLayout({
