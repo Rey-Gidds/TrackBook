@@ -7,6 +7,7 @@ export interface IUser extends Document {
   image?: string;
   walletBalance: number;
   currency: string;
+  rooms: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,7 @@ const UserSchema = new Schema<IUser>(
     image: { type: String },
     walletBalance: { type: Number, default: 0 },
     currency: { type: String, default: "INR" },
+    rooms: [{ type: Schema.Types.ObjectId, ref: "Room", default: [] }],
   },
   { timestamps: true }
 );
