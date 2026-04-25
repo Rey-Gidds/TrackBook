@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
-
+import "./User";
+import "./Room";
+import "./RoomBook";
 export type SplitType = "equal" | "manual" | "percentage" | "ratio" | "settlement";
 export type TicketType = "expense" | "settlement";
 

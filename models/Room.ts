@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
-
+import "./User";
+import "./RoomBook";
 export interface IRoom extends Document {
   name: string;
   users: mongoose.Types.ObjectId[];

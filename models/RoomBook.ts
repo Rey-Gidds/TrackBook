@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
-
+import "./Room";
+import "./RoomTicket";
 export interface IRoomBook extends Document {
   roomId: mongoose.Types.ObjectId;
   tickets: mongoose.Types.ObjectId[];
