@@ -72,8 +72,8 @@ export default function SignUp() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-      <div className="w-full max-w-sm p-8 space-y-6 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800">
+    <div className="flex min-h-screen items-start md:items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
+      <div className="w-full max-w-sm p-6 md:p-8 space-y-6 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-zinc-50">Create an account</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-400">
