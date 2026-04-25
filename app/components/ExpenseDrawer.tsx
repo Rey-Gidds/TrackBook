@@ -1,7 +1,7 @@
-// Provides the modal drawer for viewing and editing an expense
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate } from "@/utils/dateHelpers";
 import { supportedCurrencies } from "@/utils/currencyConverter";
+import { useDraggableSheet } from "@/app/hooks/useDraggableSheet";
 
 interface ExpenseDrawerProps {
   drawerData: { id: string; mode: "view" | "edit" } | null;
@@ -45,6 +45,8 @@ export function ActionMenuDrawer({
   editLabel = "Edit",
   deleteLabel = "Delete"
 }: ActionMenuDrawerProps) {
+  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+
   if (!isOpen) return null;
 
   return (
@@ -53,7 +55,11 @@ export function ActionMenuDrawer({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer" 
         onClick={onClose}
       />
-      <div className="relative w-full sm:max-w-sm flex flex-col items-center justify-end sm:justify-center animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200">
+      <div 
+        ref={sheetRef}
+        style={style}
+        className="relative w-full sm:max-w-sm flex flex-col items-center justify-end sm:justify-center animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200"
+      >
         
         {/* Ticket Summary Card positioned above the drawer options */}
         {(title || amount) && (
@@ -74,7 +80,12 @@ export function ActionMenuDrawer({
 
         {/* Action Menu */}
         <div className="w-full bg-[var(--surface)] shadow-2xl p-6 flex flex-col rounded-t-3xl sm:rounded-2xl border-t sm:border border-[var(--border)] shrink-0">
-          <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto mb-6 sm:hidden" />
+          <div 
+            className="w-full -mt-2 mb-4 pt-2 pb-2 drag-handle-area touch-none cursor-grab active:cursor-grabbing sm:hidden"
+            {...handlers}
+          >
+            <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto pointer-events-none" />
+          </div>
           
           <div className="space-y-2">
           <button 
@@ -123,18 +134,32 @@ export default function ExpenseDrawer({
   walletCurrency,
   originalExpense
 }: ExpenseDrawerProps) {
+  const { sheetRef, style, handlers } = useDraggableSheet({ 
+    isOpen: !!drawerData, 
+    onClose: () => setDrawerData(null) 
+  });
+
   if (!drawerData) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center sm:p-4">
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer transition-opacity" 
         onClick={() => setDrawerData(null)}
       />
-      <div className="relative w-full sm:max-w-lg bg-[var(--surface)] shadow-2xl p-6 sm:p-8 flex flex-col rounded-t-3xl sm:rounded-2xl border-t sm:border border-[var(--border)] overflow-y-auto max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200">
+      <div 
+        ref={sheetRef}
+        style={style}
+        className="relative w-full sm:max-w-lg bg-[var(--surface)] shadow-2xl p-6 sm:p-8 flex flex-col rounded-t-3xl sm:rounded-2xl border-t sm:border border-[var(--border)] overflow-y-auto max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200"
+      >
         
         {/* Mobile Pull Handle */}
-        <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto mb-6 sm:hidden" />
+        <div 
+          className="w-full -mt-2 mb-4 pt-2 pb-2 drag-handle-area touch-none cursor-grab active:cursor-grabbing sm:hidden shrink-0"
+          {...handlers}
+        >
+          <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto pointer-events-none" />
+        </div>
 
         <div className="flex justify-between items-center mb-6 sm:mb-8">
           <h3 className="text-xl font-playfair font-bold text-[var(--foreground)] leading-tight">

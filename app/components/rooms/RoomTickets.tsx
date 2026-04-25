@@ -5,6 +5,7 @@ import { formatRoomCurrency } from "@/utils/roomCurrency";
 import { createPortal } from "react-dom";
 import AddTicketModal from "./AddTicketModal";
 import { ActionMenuDrawer } from "../ExpenseDrawer";
+import { useDraggableSheet } from "@/app/hooks/useDraggableSheet";
 
 interface RoomTicketsProps {
   room: any;
@@ -45,6 +46,11 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
   const [detailTicket, setDetailTicket] = useState<any | null>(null);
   const [editTicket, setEditTicket] = useState<any | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  const { sheetRef: detailSheetRef, style: detailStyle, handlers: detailHandlers } = useDraggableSheet({
+    isOpen: !!detailTicket,
+    onClose: () => setDetailTicket(null)
+  });
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -96,9 +102,18 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
   const detailDrawer = detailTicket && (
     <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-md cursor-pointer" onClick={() => setDetailTicket(null)} />
-      <div className="relative w-full sm:max-w-lg bg-[var(--surface)] shadow-2xl p-6 sm:p-8 flex flex-col rounded-t-3xl sm:rounded-2xl border-t sm:border border-[var(--border)] overflow-y-auto max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200">
+      <div 
+        ref={detailSheetRef}
+        style={detailStyle}
+        className="relative w-full sm:max-w-lg bg-[var(--surface)] shadow-2xl p-6 sm:p-8 flex flex-col rounded-t-3xl sm:rounded-2xl border-t sm:border border-[var(--border)] overflow-y-auto max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-200"
+      >
         
-        <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto mb-6 sm:hidden shrink-0" />
+        <div 
+          className="w-full -mt-2 mb-4 pt-2 pb-2 drag-handle-area touch-none cursor-grab active:cursor-grabbing sm:hidden shrink-0"
+          {...detailHandlers}
+        >
+          <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto pointer-events-none" />
+        </div>
 
         <div className="flex justify-between items-start mb-6">
           <div>
