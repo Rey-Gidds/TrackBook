@@ -10,11 +10,13 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
+  const currentDragY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setDragY(0);
+      currentDragY.current = 0;
       setIsDragging(false);
     }
   }, [isOpen]);
@@ -24,6 +26,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
     if (sheetRef.current && target.closest('.drag-handle-area')) {
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       dragStartY.current = e.clientY;
+      currentDragY.current = 0;
       setIsDragging(true);
     }
   };
@@ -34,6 +37,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
     const deltaY = currentY - dragStartY.current;
     if (deltaY > 0) {
       setDragY(deltaY);
+      currentDragY.current = deltaY;
     }
   };
 
@@ -48,11 +52,12 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
     } catch (error) {
       // Ignore if capture is already lost
     }
-    if (dragY > threshold) {
+    if (currentDragY.current > threshold) {
       onClose();
-    } else {
-      setDragY(0);
     }
+    
+    setDragY(0);
+    currentDragY.current = 0;
   };
 
   const style = {

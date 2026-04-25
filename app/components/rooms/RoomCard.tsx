@@ -5,6 +5,7 @@ import { fromSmallestUnit, formatRoomCurrency } from "@/utils/roomCurrency";
 interface RoomCardProps {
   room: any;
   onClick: () => void;
+  loading?: boolean;
 }
 
 function Avatar({ user, size = 24 }: { user: any; size?: number }) {
@@ -36,7 +37,7 @@ function Avatar({ user, size = 24 }: { user: any; size?: number }) {
   );
 }
 
-export default function RoomCard({ room, onClick }: RoomCardProps) {
+export default function RoomCard({ room, onClick, loading = false }: RoomCardProps) {
   const net = room.netBalance ?? 0;
   const isOwed = net < 0;   // net < 0 means others owe you
   const isOwing = net > 0;  // net > 0 means you owe others
@@ -45,8 +46,14 @@ export default function RoomCard({ room, onClick }: RoomCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--accent)]/40 hover:shadow-lg transition-all duration-200 group"
+      disabled={loading}
+      className={`w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--accent)]/40 hover:shadow-lg transition-all duration-200 group relative ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}
     >
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface)]/30 backdrop-blur-[1px] rounded-2xl z-10">
+          <div className="animate-spin h-5 w-5 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full" />
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">

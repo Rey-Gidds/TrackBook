@@ -14,6 +14,7 @@ export default function RoomList({ currentUserId }: RoomListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
   const fetchRooms = useCallback(async () => {
@@ -34,13 +35,21 @@ export default function RoomList({ currentUserId }: RoomListProps) {
   useEffect(() => { fetchRooms(); }, [fetchRooms]);
 
   const handleSelectRoom = async (room: any) => {
-    // Re-fetch full room details with populated users
+    // Navigate immediately with existing data for instant feedback
+    setSelectedRoom(room);
+    
+    // Background fetch to ensure we have the latest/full details without blocking the UI
+    setIsNavigating(room._id);
     try {
       const res = await fetch(`/api/rooms/${room._id}`);
-      const data = await res.json();
-      if (res.ok) setSelectedRoom(data);
-    } catch {
-      setSelectedRoom(room);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedRoom(data);
+      }
+    } catch (err) {
+      console.error("Failed to refresh room details", err);
+    } finally {
+      setIsNavigating(null);
     }
   };
 
@@ -128,6 +137,7 @@ export default function RoomList({ currentUserId }: RoomListProps) {
               key={room._id}
               room={room}
               onClick={() => handleSelectRoom(room)}
+              loading={isNavigating === room._id}
             />
           ))}
         </div>
