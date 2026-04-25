@@ -22,6 +22,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Kharche",
   description: "Manage your multi-currency expenses with style.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
