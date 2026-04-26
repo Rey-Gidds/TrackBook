@@ -9,29 +9,21 @@ interface RoomBalancesProps {
   currency: string;
 }
 
+import useSWR from "swr";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load balances");
+  return data;
+};
+
 export default function RoomBalances({ roomId, currency }: RoomBalancesProps) {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: stats, error: swrError, isLoading: loading, mutate: fetchStats } = useSWR(`/api/rooms/${roomId}/stats`, fetcher);
+  const error = swrError?.message || "";
+  
   const [settleTarget, setSettleTarget] = useState<any>(null);
   const [settleAll, setSettleAll] = useState(false);
-
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/rooms/${roomId}/stats`);
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Failed to load balances"); return; }
-      setStats(data);
-    } catch {
-      setError("Failed to load balances");
-    } finally {
-      setLoading(false);
-    }
-  }, [roomId]);
-
-  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   if (loading) {
     return (

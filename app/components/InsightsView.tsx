@@ -16,34 +16,24 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+import useSWR from "swr";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load expenses");
+  return data;
+};
+
 export default function InsightsView() {
   const now = new Date();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("Monthly");
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: expenses = [], isLoading: loading } = useSWR<any[]>("/api/expenses?category=All&sort=desc&sortBy=date", fetcher);
   const { walletCurrency } = useWallet();
   
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    async function fetchAll() {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/expenses?category=All&sort=desc&sortBy=date");
-        if (res.ok) {
-          const data = await res.json();
-          setExpenses(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch expenses for insights", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAll();
-  }, []);
 
   const years = useMemo(() => {
     // Collect unique years from expenses and current year

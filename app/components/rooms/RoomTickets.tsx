@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import AddTicketModal from "./AddTicketModal";
 import { ActionMenuDrawer } from "../ExpenseDrawer";
 import { useDraggableSheet } from "@/app/hooks/useDraggableSheet";
+import useSWR from "swr";
 
 interface RoomTicketsProps {
   room: any;
@@ -38,10 +39,19 @@ function SplitBadge({ splitType }: { splitType: string }) {
   );
 }
 
+
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load tickets");
+  return data;
+};
+
 export default function RoomTickets({ room, currentUserId, refreshTrigger }: RoomTicketsProps) {
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: tickets = [], error: swrError, isLoading: loading, mutate: fetchTickets } = useSWR<any[]>(`/api/rooms/${room._id}/tickets`, fetcher);
+  const error = swrError?.message || "";
+  
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [detailTicket, setDetailTicket] = useState<any | null>(null);
   const [editTicket, setEditTicket] = useState<any | null>(null);
@@ -54,21 +64,7 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
 
   useEffect(() => { setMounted(true); }, []);
 
-  const fetchTickets = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/rooms/${room._id}/tickets`);
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Failed to load tickets"); return; }
-      setTickets(data);
-    } catch {
-      setError("Failed to load tickets");
-    } finally {
-      setLoading(false);
-    }
-  }, [room._id]);
-
+  // Re-fetch when refreshTrigger changes
   useEffect(() => { fetchTickets(); }, [fetchTickets, refreshTrigger]);
 
   const handleDelete = async (ticketId: string) => {

@@ -9,30 +9,22 @@ interface RoomListProps {
   currentUserId: string;
 }
 
+import useSWR from "swr";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load rooms");
+  return data;
+};
+
 export default function RoomList({ currentUserId }: RoomListProps) {
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: rooms = [], error: swrError, isLoading: loading, mutate: fetchRooms } = useSWR<any[]>("/api/rooms", fetcher);
+  const error = swrError?.message || "";
+  
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
   const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-
-  const fetchRooms = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/rooms");
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Failed to load rooms"); return; }
-      setRooms(data);
-    } catch {
-      setError("Failed to load rooms.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchRooms(); }, [fetchRooms]);
 
   const handleSelectRoom = async (room: any) => {
     // Navigate immediately with existing data for instant feedback
@@ -99,7 +91,7 @@ export default function RoomList({ currentUserId }: RoomListProps) {
         <div className="text-center py-12">
           <p className="text-sm text-red-500 mb-4">{error}</p>
           <button
-            onClick={fetchRooms}
+            onClick={() => fetchRooms()}
             className="text-xs font-bold uppercase tracking-widest text-[var(--accent)] hover:opacity-70 cursor-pointer"
           >
             Try Again

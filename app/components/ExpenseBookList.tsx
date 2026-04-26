@@ -105,39 +105,33 @@ function EditBookModal({
   );
 }
 
+import useSWR from "swr";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load books");
+  return data;
+};
+
 export default function ExpenseBookList({ onSelectBook, refreshTrigger }: ExpenseBookListProps) {
-  const [books, setBooks] = useState<ExpenseBook[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: books = [], isLoading: loading, mutate: fetchBooks } = useSWR<ExpenseBook[]>("/api/expense-books", fetcher);
+  
   const [mounted, setMounted] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editBook, setEditBook] = useState<ExpenseBook | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const fetchBooks = async () => {
-    try {
-      const response = await fetch("/api/expense-books");
-      if (response.ok) {
-        const data = await response.json();
-        setBooks(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch books", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBooks();
-  }, [refreshTrigger]);
+  // Re-fetch when refreshTrigger changes
+  useEffect(() => { fetchBooks(); }, [fetchBooks, refreshTrigger]);
 
   const handleDelete = async (bookId: string) => {
     if (!confirm("Delete this collection? All its tickets will also be removed.")) return;
     try {
       const res = await fetch(`/api/expense-books/${bookId}`, { method: "DELETE" });
       if (res.ok) {
-        setBooks((prev) => prev.filter((b) => b._id !== bookId));
+        fetchBooks();
       } else {
         const data = await res.json();
         alert(data.error || "Failed to delete");
@@ -213,7 +207,7 @@ export default function ExpenseBookList({ onSelectBook, refreshTrigger }: Expens
           book={editBook}
           onClose={() => setEditBook(null)}
           onSuccess={(updated) => {
-            setBooks((prev) => prev.map((b) => b._id === updated._id ? updated : b));
+            fetchBooks();
             setEditBook(null);
           }}
         />,
