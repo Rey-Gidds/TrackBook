@@ -7,6 +7,7 @@ import "./globals.css";
 import { ExpenseProvider } from "@/context/ExpenseContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { WalletProvider } from "@/context/WalletContext";
+import PwaRegistry from "@/app/components/PwaRegistry";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -38,7 +39,8 @@ export default function RootLayout({
       className={`${playfair.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-inter">
-          <NotificationProvider>
+        <PwaRegistry />
+        <NotificationProvider>
             <WalletProvider>
               <ExpenseProvider>
                 {children}
