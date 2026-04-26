@@ -158,13 +158,6 @@ export default function SignIn() {
               Sign Up
             </Link>
           </div>
-          <div className="pt-2 border-t border-gray-100 dark:border-zinc-800">
-            <DownloadLink 
-              variant="text" 
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider"
-              title="Download App"
-            />
-          </div>
         </div>
       </div>
     </div>
