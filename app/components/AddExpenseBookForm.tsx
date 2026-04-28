@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import ErrorMessage from "./ErrorMessage";
+import { supportedCurrencies } from "@/utils/currencyConverter";
+import { useWallet } from "@/context/WalletContext";
 
 interface AddExpenseBookFormProps {
   onSuccess: () => void;
 }
 
 export default function AddExpenseBookForm({ onSuccess }: AddExpenseBookFormProps) {
+  const { walletCurrency } = useWallet();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState(walletCurrency!);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,7 +32,7 @@ export default function AddExpenseBookForm({ onSuccess }: AddExpenseBookFormProp
       const response = await fetch("/api/expense-books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ title, description, currency: defaultCurrency }),
       });
 
       if (response.ok) {
@@ -67,6 +71,31 @@ export default function AddExpenseBookForm({ onSuccess }: AddExpenseBookFormProp
           className="w-full py-2 bg-transparent border-b border-[var(--border)] focus:border-[var(--accent)] outline-none font-medium text-[var(--foreground)]"
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Default Currency</label>
+        <select
+          value={defaultCurrency}
+          onChange={(e) => setDefaultCurrency(e.target.value)}
+          className="w-full py-2 bg-transparent border-b border-[var(--border)] focus:border-[var(--accent)] outline-none font-medium text-[var(--foreground)]"
+          required
+        >
+          {
+          [...supportedCurrencies].sort((a, b) => {
+            if (a === walletCurrency) return -1;
+            if (b === walletCurrency) return 1;
+            return 0;
+          }).map(curr => 
+            {
+              return walletCurrency === curr ? 
+              <option key={curr} value={curr} className="bg-[var(--surface)]">{curr} (Current)</option>
+              :
+              <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>
+            }
+          )
+        }
+        </select>
       </div>
 
       <div className="space-y-2">

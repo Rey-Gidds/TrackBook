@@ -35,10 +35,14 @@ const WalletIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
 );
 
+import FullScreenLoader from "./FullScreenLoader";
+
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("books");
+  const [isNavigating, setIsNavigating] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [selectedBookTitle, setSelectedBookTitle] = useState<string>("");
+  const [selectedBookCurrency, setSelectedBookCurrency] = useState<string>("");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -54,9 +58,10 @@ export default function Dashboard() {
     }
   }, [searchParams]);
 
-  const handleSelectBook = (bookId: string, bookTitle: string) => {
+  const handleSelectBook = (bookId: string, bookTitle: string, bookCurrency: string) => {
     setSelectedBookTitle(bookTitle);
     setSelectedBookId(bookId);
+    setSelectedBookCurrency(bookCurrency);
     setViewMode("single-book");
   };
 
@@ -70,6 +75,7 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto mt-0 md:mt-8 space-y-4 md:space-y-12">
+      {isNavigating && <FullScreenLoader />}
       {/* Navigation / Secondary Header (Desktop Only) */}
       <div className="hidden md:flex items-center gap-6 border-b border-[var(--border)] pb-4 overflow-x-auto no-scrollbar">
         {navItems.map((item) => (
@@ -77,7 +83,8 @@ export default function Dashboard() {
             key={item.key}
             onClick={() => {
               if (item.key === "wallet") {
-                router.push("/me?tab=wallet");
+                setIsNavigating(true);
+                router.push("/me/wallet");
               } else {
                 setViewMode(item.key as ViewMode);
                 setSelectedBookId(null);
@@ -122,6 +129,7 @@ export default function Dashboard() {
           <ExpenseList
             bookId={selectedBookId}
             bookTitle={selectedBookTitle}
+            bookCurrency={selectedBookCurrency}
             onBack={() => setViewMode("books")}
             refreshTrigger={refreshTrigger}
           />
@@ -147,13 +155,14 @@ export default function Dashboard() {
             title="Record Transaction"
             sheet
           >
-            <AddExpenseForm
-              bookId={selectedBookId || undefined}
-              onSuccess={() => {
-                setIsExpenseModalOpen(false);
-                setRefreshTrigger((prev) => prev + 1);
-              }}
-            />
+          <AddExpenseForm
+            bookId={selectedBookId || undefined}
+            bookCurrency={selectedBookId ? selectedBookCurrency : undefined}
+            onSuccess={() => {
+              setIsExpenseModalOpen(false);
+              setRefreshTrigger((prev) => prev + 1);
+            }}
+          />
           </Modal>
 
           <Modal

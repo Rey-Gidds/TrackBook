@@ -17,24 +17,30 @@ import BottomSheet from "./BottomSheet";
 interface ExpenseListProps {
   bookId?: string;
   bookTitle?: string;
+  bookCurrency?: string;
   onBack?: () => void;
   refreshTrigger?: number;
 }
 
-export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger }: ExpenseListProps) {
+export default function ExpenseList({ bookId, bookTitle, bookCurrency, onBack, refreshTrigger }: ExpenseListProps) {
   const { expenses, setExpenses, fetchExpenses, updateExpense, loading, error, setError } = useExpenses();
   const { refetchWallet, walletBalance, walletCurrency } = useWallet();
   const { data: session } = useSession();
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [displayCurrency, setDisplayCurrency] = useState("USD");
+  const [displayCurrency, setDisplayCurrency] = useState(bookCurrency || walletCurrency);
   const [mounted, setMounted] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (bookCurrency) {
+      setDisplayCurrency(bookCurrency);
+    } else {
+      setDisplayCurrency(walletCurrency);
+    }
+  }, [walletCurrency, bookCurrency]);
  
   const {
     activeMenu,
@@ -73,7 +79,7 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
     walletCurrency
   );
 
-  const activeFiltersCount = (categoryFilter !== "All" ? 1 : 0) + (displayCurrency !== "USD" ? 1 : 0) + (sortBy !== "createdAt" ? 1 : 0);
+  const activeFiltersCount = (categoryFilter !== "All" ? 1 : 0) + (displayCurrency !== walletCurrency ? 1 : 0) + (sortBy !== "createdAt" ? 1 : 0);
 
   // Early returns AFTER all hooks
   if (loading && expenses.length === 0) {
@@ -147,7 +153,16 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
               onChange={(e) => setDisplayCurrency(e.target.value)}
               className="text-sm font-bold text-[var(--foreground)] bg-transparent border-none outline-none cursor-pointer hover:underline"
             >
-              {supportedCurrencies.map(curr => <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>)}
+              {[...supportedCurrencies].sort((a, b) => {
+                const primary = bookCurrency || walletCurrency;
+                if (a === primary) return -1;
+                if (b === primary) return 1;
+                return 0;
+              }).map(curr => (
+                <option key={curr} value={curr} className="bg-[var(--surface)]">
+                  {curr} {curr === (bookCurrency || walletCurrency) ? "(Default)" : ""}
+                </option>
+              ))}
             </select>
           </div>
           
@@ -227,7 +242,11 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
           ) : (
             expenses.map((expense: any, index: number) => {
               const isSelected = drawerData?.id === expense._id;
-              const convertedAmount = convertCurrency(expense.amount, expense.currency || "USD", displayCurrency);
+              let expenseAmount = expense.amount;
+              if (expense.currency !== displayCurrency) {
+                // convertCurrency uses USD as the base currency.
+                expenseAmount = convertCurrency(expense.amount, expense.currency || "USD", displayCurrency);
+              }
               return (
                 <ExpenseTableRow
                   key={expense._id}
@@ -235,7 +254,7 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
                   index={index}
                   totalExpenses={expenses.length}
                   displayCurrency={displayCurrency}
-                  convertedAmount={convertedAmount}
+                  convertedAmount={expenseAmount}
                   isSelected={isSelected}
                   activeMenu={activeMenu}
                   setActiveMenu={setActiveMenu}
@@ -258,7 +277,18 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
                 onChange={(e) => setDisplayCurrency(e.target.value)}
                 className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm font-bold text-[var(--foreground)] outline-none"
               >
-                {supportedCurrencies.map(curr => <option key={curr} value={curr}>{curr}</option>)}
+                {
+                  [...supportedCurrencies].sort((a, b) => {
+                    const primary = bookCurrency || walletCurrency;
+                    if (a === primary) return -1;
+                    if (b === primary) return 1;
+                    return 0;
+                  }).map(curr => (
+                    <option key={curr} value={curr} className="bg-[var(--surface)]">
+                      {curr} {curr === (bookCurrency || walletCurrency) ? "(Default)" : ""}
+                    </option>
+                  ))
+                }
               </select>
             </div>
             
@@ -308,7 +338,7 @@ export default function ExpenseList({ bookId, bookTitle, onBack, refreshTrigger 
               <button
                 onClick={() => {
                   setCategoryFilter("All");
-                  setDisplayCurrency("USD");
+                  setDisplayCurrency(walletCurrency);
                   setSortBy("createdAt");
                   setSortOrder("desc");
                 }}

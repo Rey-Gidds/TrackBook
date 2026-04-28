@@ -258,7 +258,7 @@ export default function ExpenseDrawer({
             <div className="pt-4 flex gap-3">
               {isBelow ? (
                 <button 
-                  onClick={() => router.push('/me?tab=wallet')}
+                  onClick={() => router.push('/me/wallet')}
                   className="flex-1 bg-rose-500 text-white rounded py-3 font-bold text-sm cursor-pointer hover:opacity-90 shadow-sm"
                 >
                   Add Money to Wallet

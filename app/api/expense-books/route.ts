@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { title, description } = await req.json();
+        const { title, description, currency } = await req.json();
 
         if (!title || title.trim() === "") {
             return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -22,10 +22,18 @@ export async function POST(req: Request) {
 
         await connectDB();
 
+        let finalCurrency = currency;
+        if (!finalCurrency) {
+            const User = (await import("@/models/User")).default;
+            const user = await User.findById(session.user.id);
+            finalCurrency = user?.currency || "INR";
+        }
+
         const expenseBook = await ExpenseBook.create({
             userId: session.user.id,
             title,
             description,
+            currency: finalCurrency,
         });
 
         return NextResponse.json(expenseBook, { status: 201 });
@@ -45,8 +53,7 @@ export async function GET(req: Request) {
 
     try {
         await connectDB();
-        
-        const expenseBooks = await ExpenseBook.find({ userId: session.user.id })
+        let expenseBooks = await ExpenseBook.find({ userId: session.user.id })
             .sort({ createdAt: -1 });
 
         return NextResponse.json(expenseBooks);

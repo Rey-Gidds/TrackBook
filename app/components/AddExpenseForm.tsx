@@ -15,12 +15,14 @@ const AMOUNT_LIMIT = 1000000;
 
 interface AddExpenseFormProps {
   bookId?: string;
+  bookCurrency?: string;
   onSuccess?: () => void;
 }
 
-export default function AddExpenseForm({ bookId, onSuccess }: AddExpenseFormProps) {
+export default function AddExpenseForm({ bookId, bookCurrency, onSuccess }: AddExpenseFormProps) {
+  const { walletBalance, walletCurrency, refetchWallet } = useWallet();
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(bookCurrency || walletCurrency);
   const [category, setCategory] = useState("Food");
   const [customCategory, setCustomCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -30,11 +32,14 @@ export default function AddExpenseForm({ bookId, onSuccess }: AddExpenseFormProp
   const { expenses, setExpenses, fetchExpenses } = useExpenses();
   const { showNotification } = useNotification();
   const { data: session } = useSession();
-  const { walletBalance, walletCurrency, refetchWallet } = useWallet();
   const router = useRouter();
-  console.log("Wallet Currency:", walletCurrency);
 
-  const costInWalletCurrency = amount ? convertCurrency(Number(amount), currency, walletCurrency) : 0;
+  let costInWalletCurrency = 0;
+  if (currency != walletCurrency){
+    costInWalletCurrency = amount ? convertCurrency(Number(amount), currency, walletCurrency) : 0;
+  } else {
+    costInWalletCurrency = Number(amount);
+  }
   const projectedBalance = walletBalance - costInWalletCurrency;
   
   // Threshold logic
@@ -115,7 +120,7 @@ export default function AddExpenseForm({ bookId, onSuccess }: AddExpenseFormProp
 
       if (response.ok) {
         setAmount("");
-        setCurrency("USD");
+        setCurrency(bookCurrency || walletCurrency);
         setCategory("Food");
         setCustomCategory("");
         setDescription("");
@@ -186,7 +191,22 @@ export default function AddExpenseForm({ bookId, onSuccess }: AddExpenseFormProp
                   onChange={(e) => setCurrency(e.target.value)}
                   className="py-2 bg-transparent outline-none text-xs font-bold text-[var(--muted)] cursor-pointer shrink-0"
                 >
-                  {supportedCurrencies.map(curr => <option key={curr} value={curr} className="bg-[var(--surface)]">{curr}</option>)}
+                  {
+                    [...supportedCurrencies].sort((a, b) => {
+                      const primary = bookCurrency || walletCurrency;
+                      if (a === primary) return -1;
+                      if (b === primary) return 1;
+                      return 0;
+                    }).map(curr => 
+                      {
+                        return (
+                        <option key={curr} value={curr} className="bg-[var(--surface)]">
+                          {curr} {curr === (bookCurrency || walletCurrency) ? "(Default)" : ""}
+                        </option>
+                        );
+                      }
+                    )
+                  }
                 </select>
               </div>
               {amount && (
@@ -254,7 +274,7 @@ export default function AddExpenseForm({ bookId, onSuccess }: AddExpenseFormProp
           {isBelowThreshold ? (
             <button
               type="button"
-              onClick={() => router.push('/me?tab=wallet')}
+              onClick={() => router.push('/me/wallet')}
               className="w-full py-3.5 bg-rose-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg cursor-pointer hover:opacity-90 shadow-sm"
             >
               Add Money to Wallet

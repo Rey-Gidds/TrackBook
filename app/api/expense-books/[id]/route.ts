@@ -44,7 +44,7 @@ export async function PUT(
 
     try {
         const { id } = await params;
-        const { title, description } = await req.json();
+        const { title, description, currency } = await req.json();
 
         if (!title || title.trim() === "") {
             return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -53,7 +53,11 @@ export async function PUT(
         await connectDB();
         const book = await ExpenseBook.findOneAndUpdate(
             { _id: id, userId: session.user.id },
-            { title: title.trim(), description: description?.trim() ?? "" },
+            { 
+                title: title.trim(), 
+                description: description?.trim() ?? "",
+                currency: currency?.trim()
+            },
             { new: true }
         );
 

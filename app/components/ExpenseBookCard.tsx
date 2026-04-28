@@ -3,12 +3,13 @@
 interface ExpenseBookCardProps {
   title: string;
   description?: string;
+  currency: string;
   createdAt: string;
   onClick: () => void;
   onOptionsClick: (e: React.MouseEvent) => void;
 }
 
-export default function ExpenseBookCard({ title, description, createdAt, onClick, onOptionsClick }: ExpenseBookCardProps) {
+export default function ExpenseBookCard({ title, description, currency, createdAt, onClick, onOptionsClick }: ExpenseBookCardProps) {
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
@@ -39,9 +40,12 @@ export default function ExpenseBookCard({ title, description, createdAt, onClick
       </button>
 
       <div className="space-y-2 md:space-y-4">
-        <h3 className="text-sm md:text-lg font-playfair font-bold text-[var(--foreground)] pr-6 line-clamp-1 md:line-clamp-2">
-          {title}
-        </h3>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-sm md:text-lg font-playfair font-bold text-[var(--foreground)] pr-6 line-clamp-1 md:line-clamp-2">
+            {title}
+          </h3>
+        </div>
+        
         {description && (
           <p className="text-[10px] md:text-[11px] text-[var(--muted)] line-clamp-2 md:line-clamp-3 leading-relaxed uppercase tracking-wider font-medium">
             {description}
@@ -49,11 +53,19 @@ export default function ExpenseBookCard({ title, description, createdAt, onClick
         )}
       </div>
 
-      <div className="flex flex-col items-start md:items-end">
+    
+      <div className="flex items-center justify-between">
         <p className="text-[9px] font-bold text-[var(--muted)] opacity-60 uppercase tracking-[0.2em]">
           {formattedDate} <span className="hidden md:inline">{formattedTime}</span>
         </p>
-      </div>
+        {currency && (
+          <span className="shrink-0 px-1.5 py-0.5 rounded bg-[var(--border)]/50 text-[8px] md:text-[9px] font-bold text-[var(--muted)] uppercase tracking-wider mt-1">
+            {currency}
+          </span>
+        )}
+      </div> 
+      
+          
       
       {/* Decorative pulse on hover */}
       <div className="absolute bottom-0 left-0 h-1 w-0 bg-[var(--accent)] transition-all duration-300 group-hover:w-full" />

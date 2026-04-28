@@ -3,6 +3,9 @@
 import { useMediaQuery } from "@/app/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 
+import { useState } from "react";
+import FullScreenLoader from "./FullScreenLoader";
+
 interface BottomNavProps {
   viewMode: string;
   setViewMode: (mode: any) => void;
@@ -13,11 +16,13 @@ interface BottomNavProps {
 export default function BottomNav({ viewMode, setViewMode, setSelectedBookId, navItems }: BottomNavProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   if (!isMobile) return null;
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-[var(--surface)] border-t border-[var(--border)] z-40 pb-safe">
+      {isNavigating && <FullScreenLoader />}
       <div className="flex items-center justify-around px-2 py-3">
         {navItems.map((item) => {
           const isActive = viewMode === item.key || (viewMode === "single-book" && item.key === "books");
@@ -26,7 +31,8 @@ export default function BottomNav({ viewMode, setViewMode, setSelectedBookId, na
               key={item.key}
               onClick={() => {
                 if (item.key === "wallet") {
-                  router.push("/me?tab=wallet");
+                  setIsNavigating(true);
+                  router.push("/me/wallet");
                 } else {
                   setViewMode(item.key as any);
                   setSelectedBookId(null);

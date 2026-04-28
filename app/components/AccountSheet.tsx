@@ -7,13 +7,18 @@ import SignOutButton from "./SignOutButton";
 import Link from "next/link";
 import DownloadLink from "./DownloadLink";
 
+import { useRouter } from "next/navigation";
+import FullScreenLoader from "./FullScreenLoader";
+
 interface AccountSheetProps {
   session: any;
 }
 
 export default function AccountSheet({ session }: AccountSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { walletBalance, walletCurrency } = useWallet();
+  const router = useRouter();
 
   const initial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U";
   const name = session?.user?.name ?? "";
@@ -25,6 +30,7 @@ export default function AccountSheet({ session }: AccountSheetProps) {
 
   return (
     <>
+      {isNavigating && <FullScreenLoader />}
       {/* Avatar trigger button */}
       <button
         onClick={() => setIsOpen(true)}
@@ -81,8 +87,11 @@ export default function AccountSheet({ session }: AccountSheetProps) {
               <DownloadLink variant="button" />
             </div>
             <Link
-              href="/me?tab=account"
-              onClick={() => setIsOpen(false)}
+              href="/me/account"
+              onClick={() => {
+                setIsOpen(false);
+                setIsNavigating(true);
+              }}
               className="w-full py-3.5 text-center bg-[var(--surface)] border border-[var(--border)] rounded-2xl font-bold text-sm text-[var(--foreground)] hover:border-[var(--accent)] transition-colors"
             >
               Manage Account
