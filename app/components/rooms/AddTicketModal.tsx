@@ -37,7 +37,7 @@ export default function AddTicketModal({ isOpen, onClose, onSuccess, room, curre
   const { refetchWallet } = useWallet();
   const { withProcessing } = useProcessing();
 
-  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
   const [isEntering, setIsEntering] = useState(true);
 
   useEffect(() => {
@@ -253,9 +253,9 @@ export default function AddTicketModal({ isOpen, onClose, onSuccess, room, curre
   ];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity animate-in fade-in duration-300" 
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-300 animate-in fade-in ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
         onClick={onClose} 
       />
       <div 

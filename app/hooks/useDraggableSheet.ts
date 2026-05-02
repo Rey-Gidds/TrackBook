@@ -10,6 +10,7 @@ interface UseDraggableSheetProps {
 export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDraggableSheetProps) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const dragStartY = useRef(0);
   const currentDragY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -20,10 +21,12 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
       setDragY(0);
       currentDragY.current = 0;
       setIsDragging(false);
+      setIsClosing(false);
     }
   }, [isOpen]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (isClosing) return;
     const target = e.target as HTMLElement;
     if (sheetRef.current && target.closest('.drag-handle-area')) {
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -34,7 +37,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || isClosing) return;
     const currentY = e.clientY;
     const deltaY = currentY - dragStartY.current;
     if (deltaY > 0) {
@@ -46,15 +49,21 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDragging) return;
     setIsDragging(false);
+    
     const target = e.target as HTMLElement;
     try {
       if (target.hasPointerCapture(e.pointerId)) {
         target.releasePointerCapture(e.pointerId);
       }
     } catch (error) {
-      // Ignore if capture is already lost
+      // Ignore
     }
+
     if (currentDragY.current > threshold) {
+      // Prevent synthetic clicks that might hit the backdrop after release
+      if (e.cancelable) e.preventDefault();
+      
+      setIsClosing(true);
       // Animate out before closing
       const outDistance = typeof window !== 'undefined' ? window.innerHeight : 1000;
       setDragY(outDistance);
@@ -63,6 +72,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
         // Reset state after unmount so it's ready for next time
         setDragY(0);
         currentDragY.current = 0;
+        setIsClosing(false);
       }, 200);
     } else {
       setDragY(0);
@@ -72,7 +82,8 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
 
   const style = isMobile ? {
     transform: `translateY(${dragY}px)`,
-    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)'
+    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+    pointerEvents: (isClosing ? 'none' : 'auto') as any
   } : {};
 
   const handlers = isMobile ? {
@@ -86,6 +97,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
     sheetRef,
     dragY,
     isDragging,
+    isClosing,
     style,
     handlers
   };

@@ -16,8 +16,7 @@ export default function InviteLinkModal({ isOpen, onClose, roomId, roomName }: I
   const inviteUrl = typeof window !== "undefined"
     ? `${window.location.origin}/rooms/join/${roomId}`
     : "";
-    
-  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+      const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
 
   useEffect(() => {
     if (!isOpen) { setCopied(false); }
@@ -51,8 +50,8 @@ export default function InviteLinkModal({ isOpen, onClose, roomId, roomName }: I
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
+      <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-200 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} onClick={onClose} />
       <div 
         ref={sheetRef}
         style={style}

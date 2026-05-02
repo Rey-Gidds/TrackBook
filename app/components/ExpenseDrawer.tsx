@@ -47,7 +47,7 @@ export function ActionMenuDrawer({
   editLabel = "Edit",
   deleteLabel = "Delete"
 }: ActionMenuDrawerProps) {
-  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
   const [isEntering, setIsEntering] = useState(true);
 
   useEffect(() => {
@@ -61,9 +61,9 @@ export function ActionMenuDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer animate-in fade-in duration-300" 
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer animate-in fade-in transition-opacity duration-200 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
         onClick={onClose}
       />
       <div 
@@ -146,7 +146,7 @@ export default function ExpenseDrawer({
   originalExpense
 }: ExpenseDrawerProps) {
   const router = useRouter();
-  const { sheetRef, style, handlers } = useDraggableSheet({ 
+  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ 
     isOpen: !!drawerData, 
     onClose: () => setDrawerData(null) 
   });
@@ -163,9 +163,9 @@ export default function ExpenseDrawer({
   if (!drawerData) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer transition-opacity animate-in fade-in duration-300" 
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer transition-opacity animate-in fade-in duration-200 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
         onClick={() => setDrawerData(null)}
       />
       <div 

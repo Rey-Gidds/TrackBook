@@ -18,7 +18,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
   const [isEntering, setIsEntering] = useState(true);
 
   useEffect(() => {
@@ -64,8 +64,8 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
+      <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-200 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} onClick={onClose} />
       <div 
         ref={sheetRef}
         style={style}

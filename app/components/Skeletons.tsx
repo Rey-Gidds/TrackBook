@@ -12,20 +12,20 @@ const Bone = ({ className = "" }: { className?: string }) => (
    ════════════════════════════════════════════ */
 export function SkeletonRow() {
   return (
-    <div className="flex items-start gap-4 p-4 rounded-xl border border-transparent">
+    <div className="flex items-start gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-transparent sm:border-[var(--border)] md:border-none">
       {/* circle icon */}
       <Bone className="w-10 h-10 rounded-full shrink-0" />
 
       {/* text block */}
-      <div className="flex-1 space-y-2 pt-0.5">
-        <Bone className="h-2 w-20 rounded-full" />
-        <Bone className="h-3.5 w-44 rounded-full" />
+      <div className="flex-1 min-w-0 space-y-2 pt-0.5">
+        <Bone className="h-2 w-16 sm:w-20 rounded-full" />
+        <Bone className="h-3.5 w-28 sm:w-44 max-w-full rounded-full" />
       </div>
 
       {/* amount column */}
-      <div className="text-right shrink-0 space-y-1.5 pt-0.5">
-        <Bone className="h-4 w-20 rounded-full ml-auto" />
-        <Bone className="h-3 w-14 rounded-full ml-auto opacity-60" />
+      <div className="text-right shrink-0 space-y-1.5 pt-0.5 ml-1">
+        <Bone className="h-4 w-14 sm:w-20 rounded-full ml-auto" />
+        <Bone className="h-3 w-10 sm:w-14 rounded-full ml-auto opacity-60" />
       </div>
 
       {/* 3-dot button */}
@@ -106,17 +106,17 @@ export function SkeletonExpenseRowMobile() {
    ════════════════════════════════════════════ */
 export function SkeletonRoomCard() {
   return (
-    <div className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+    <div className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5">
       {/* top row */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <Bone className="h-4 w-36 rounded-full" />
+            <Bone className="h-4 w-28 sm:w-36 rounded-full" />
           </div>
         </div>
         {/* balance side */}
         <div className="space-y-1.5 text-right">
-          <Bone className="h-4 w-20 rounded-full ml-auto" />
+          <Bone className="h-4 w-16 sm:w-20 rounded-full ml-auto" />
         </div>
       </div>
 

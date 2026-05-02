@@ -11,7 +11,7 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ isOpen, onClose, title, children }: BottomSheetProps) {
-  const { sheetRef, style, handlers } = useDraggableSheet({ isOpen, onClose });
+  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
   const [isEntering, setIsEntering] = useState(true);
 
   useEffect(() => {
@@ -41,10 +41,10 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
+    <div className={`fixed inset-0 z-[60] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-500"
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-500 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={onClose}
       />
       

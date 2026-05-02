@@ -61,7 +61,7 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
   const [editTicket, setEditTicket] = useState<any | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  const { sheetRef: detailSheetRef, style: detailStyle, handlers: detailHandlers } = useDraggableSheet({
+  const { sheetRef: detailSheetRef, style: detailStyle, handlers: detailHandlers, isClosing: isDetailClosing } = useDraggableSheet({
     isOpen: !!detailTicket,
     onClose: () => setDetailTicket(null),
   });
@@ -143,9 +143,9 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
   }
 
   const detailDrawer = detailTicket && (
-    <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4 ${isDetailClosing ? 'pointer-events-none' : ''}`}>
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-md cursor-pointer animate-in fade-in duration-500"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-md cursor-pointer animate-in fade-in duration-500 transition-opacity ${isDetailClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={() => setDetailTicket(null)}
       />
       <div
