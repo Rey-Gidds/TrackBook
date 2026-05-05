@@ -4,7 +4,6 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DownloadLink from "@/app/components/DownloadLink";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");

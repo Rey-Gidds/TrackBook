@@ -20,7 +20,21 @@ export default function SignUp() {
     setError("");
 
     try {
-      const res = await authClient.signUp.email({
+      // Check if user already exists
+      const checkRes = await fetch("/api/auth/check-email", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const checkData = await checkRes.json();
+      
+      if (checkData.exists) {
+        setError("An account with this email already exists. Please sign in instead.");
+        setLoading(false);
+        return;
+      }
+
+      await authClient.signUp.email({
         email,
         password,
         name,
@@ -29,7 +43,11 @@ export default function SignUp() {
           setSuccess(true);
         },
         onError: (ctx) => {
-          setError(ctx.error.message || "Something went wrong. Please try again.");
+          if (ctx.error.message?.toLowerCase().includes("already exists") || ctx.error.status === 422) {
+            setError("An account with this email already exists. Please sign in instead.");
+          } else {
+            setError(ctx.error.message || "Something went wrong. Please try again.");
+          }
         }
       });
     } catch (err) {

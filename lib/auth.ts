@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { MongoClient } from "mongodb";
-import { Resend } from "resend";
+import { sendEmail } from "./email";
 
 // Better Auth uses raw mongodb driver. We ensure only one connection is made.
 const MONGODB_URI = process.env.MONGODB_URI!;
@@ -28,8 +28,7 @@ if (process.env.NODE_ENV === "development") {
     client = new MongoClient(MONGODB_URI);
 }
 
-const db = client.db();
-const resend = new Resend(process.env.RESEND_API_KEY!);
+export const db = client.db();
 
 export const auth = betterAuth({
     database: mongodbAdapter(db, {
@@ -47,8 +46,7 @@ export const auth = betterAuth({
                 console.log(`\n\n🔑 PASSWORD RESET LINK: ${url}\n\n`);
             }
 
-            await resend.emails.send({
-                from: "Kharche <onboarding@resend.dev>",
+            await sendEmail({
                 to: user.email,
                 subject: "Reset your password",
                 html: `<p>Click <a href="${url}">here</a> to reset your password. The link will expire in 1 hour.</p><p>If the link doesn't work, copy and paste this direct URL: ${url}</p>`,
@@ -71,8 +69,7 @@ export const auth = betterAuth({
                 console.log(`\n\n📧 EMAIL VERIFICATION LINK: ${url}\n\n`);
             }
 
-            await resend.emails.send({
-                from: "Kharche <onboarding@resend.dev>",
+            await sendEmail({
                 to: user.email,
                 subject: "Verify your email",
                 html: `<p>Click <a href="${url}">here</a> to verify your email address. The link will expire in 24 hours.</p><p>If the link doesn't work, copy and paste this direct URL: ${url}</p>`,
