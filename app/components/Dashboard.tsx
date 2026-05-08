@@ -147,8 +147,8 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* FAB + Modals — only for non-rooms views */}
-      {viewMode !== "rooms" && !isNavigating && (
+      {/* FAB + Modals — only for non-rooms and non-insights views */}
+      {viewMode !== "rooms" && viewMode !== "insights" && !isNavigating && (
         <>
           <Modal
             isOpen={isExpenseModalOpen}
