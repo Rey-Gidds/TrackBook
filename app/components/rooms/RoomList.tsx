@@ -28,24 +28,19 @@ export default function RoomList({ currentUserId }: RoomListProps) {
   const { setProcessing, isProcessing } = useProcessing();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const handleSelectRoom = async (room: any) => {
+  // Use SWR for the individual room fetch with fallbackData from the list
+  const { data: roomDetail } = useSWR(
+    selectedRoom ? `/api/rooms/${selectedRoom._id}` : null,
+    fetcher,
+    { 
+      fallbackData: selectedRoom,
+      revalidateOnFocus: false, // Specified in Task 1 global defaults, but being explicit here
+    }
+  );
+
+  const handleSelectRoom = (room: any) => {
     // Navigate immediately with existing data for instant feedback
     setSelectedRoom(room);
-    
-    // Background fetch to ensure we have the latest/full details without blocking the UI
-    const navId = `nav-${room._id}`;
-    setProcessing(navId, true);
-    try {
-      const res = await fetch(`/api/rooms/${room._id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedRoom(data);
-      }
-    } catch (err) {
-      console.error("Failed to refresh room details", err);
-    } finally {
-      setProcessing(navId, false);
-    }
   };
 
   const handleLeft = () => {
@@ -56,7 +51,7 @@ export default function RoomList({ currentUserId }: RoomListProps) {
   if (selectedRoom) {
     return (
       <RoomView
-        room={selectedRoom}
+        room={roomDetail || selectedRoom}
         currentUserId={currentUserId}
         onBack={() => setSelectedRoom(null)}
         onLeft={handleLeft}

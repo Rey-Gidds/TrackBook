@@ -125,26 +125,23 @@ export default function RoomView({ room, currentUserId, onBack, onLeft }: RoomVi
 
       {/* Tab Content */}
       <section>
-        {tab === "tickets" && (
+        <div className={tab !== "tickets" ? "hidden" : ""}>
           <RoomTickets
             room={room}
             currentUserId={currentUserId}
             refreshTrigger={refreshTrigger}
           />
-        )}
-        {tab === "balances" && (
-          <RoomBalances
-            roomId={room._id}
-            currency={room.currency}
-          />
-        )}
-        {tab === "members" && (
+        </div>
+        <div className={tab !== "balances" ? "hidden" : ""}>
+          <RoomBalances roomId={room._id} currency={room.currency} />
+        </div>
+        <div className={tab !== "members" ? "hidden" : ""}>
           <RoomMembers
             room={room}
             currentUserId={currentUserId}
             onLeave={onLeft}
           />
-        )}
+        </div>
       </section>
 
       {/* Modals */}

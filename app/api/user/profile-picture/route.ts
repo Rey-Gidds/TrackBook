@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getCachedSession } from "@/lib/cachedSession";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
@@ -6,15 +7,13 @@ import User from "@/models/User";
 
 export async function POST(req: Request) {
     try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+        const session = await getCachedSession(await headers());
 
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { image } = await req.json();
+        const { image } = await req.json(); 
 
         if (!image) {
             return NextResponse.json({ error: "Image is required" }, { status: 400 });

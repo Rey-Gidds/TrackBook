@@ -7,6 +7,7 @@ import AddTicketModal from "./AddTicketModal";
 import { ActionMenuDrawer } from "../ExpenseDrawer";
 import { useDraggableSheet } from "@/app/hooks/useDraggableSheet";
 import { useSWRConfig } from "swr";
+import useSWR from "swr";
 import { useWallet } from "@/context/WalletContext";
 import { useProcessing } from "@/context/ProcessingContext";
 import { SkeletonRow } from "../Skeletons";
@@ -45,14 +46,15 @@ function SplitBadge({ splitType }: { splitType: string }) {
 const PAGE_SIZE = 20;
 
 export default function RoomTickets({ room, currentUserId, refreshTrigger }: RoomTicketsProps) {
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState("");
+  const swrKey = `/api/rooms/${room._id}/tickets?page=1&limit=${PAGE_SIZE}`;
+  const { data: swrData, error: swrError, mutate: mutateTickets, isValidating } = useSWR(swrKey);
 
-  const { mutate } = useSWRConfig();
+  const [extraPages, setExtraPages] = useState<any[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [manualHasMore, setManualHasMore] = useState<boolean | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { mutate: globalMutate } = useSWRConfig();
   const { refetchWallet } = useWallet();
   const { processingIds, withProcessing } = useProcessing();
 
@@ -66,41 +68,48 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
     onClose: () => setDetailTicket(null),
   });
 
+  // Derived data
+  const page1Tickets = swrData ? (Array.isArray(swrData) ? swrData : (swrData.data || [])) : [];
+  const tickets = [...page1Tickets, ...extraPages];
+  const hasMore = manualHasMore !== null ? manualHasMore : (swrData && !Array.isArray(swrData) ? swrData.hasMore : false);
+  const loading = !swrData && !swrError;
+
   useEffect(() => { setMounted(true); }, []);
 
-  const fetchTickets = useCallback(async (page: number = 1, append: boolean = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-      setError("");
-    }
-    try {
-      const res = await fetch(`/api/rooms/${room._id}/tickets?page=${page}&limit=${PAGE_SIZE}`);
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to load tickets");
-
-      const data: any[] = Array.isArray(result) ? result : (result.data ?? []);
-      const more: boolean = Array.isArray(result) ? false : (result.hasMore ?? false);
-      const returnedPage: number = Array.isArray(result) ? 1 : (result.page ?? 1);
-
-      if (append) {
-        setTickets((prev) => [...prev, ...data]);
-      } else {
-        setTickets(data);
-      }
-      setHasMore(more);
-      setCurrentPage(returnedPage);
-    } catch (e: any) {
-      setError(e.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
+  // Reset pagination when room changes
+  useEffect(() => {
+    setExtraPages([]);
+    setManualHasMore(null);
+    setCurrentPage(1);
   }, [room._id]);
 
-  // Refresh trigger (new ticket added, room changed) → reset to page 1
-  useEffect(() => { fetchTickets(1, false); }, [fetchTickets, refreshTrigger]);
+  // Handle refresh trigger
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      mutateTickets();
+    }
+  }, [refreshTrigger, mutateTickets]);
+
+  const fetchMore = async () => {
+    const nextPage = currentPage + 1;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/rooms/${room._id}/tickets?page=${nextPage}&limit=${PAGE_SIZE}`);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to load more tickets");
+
+      const data = Array.isArray(result) ? result : (result.data || []);
+      const more = Array.isArray(result) ? false : (result.hasMore || false);
+
+      setExtraPages((prev) => [...prev, ...data]);
+      setManualHasMore(more);
+      setCurrentPage(nextPage);
+    } catch (e: any) {
+      console.error("Load more failed:", e);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleDelete = async (ticketId: string) => {
     if (!confirm("Delete this ticket? All balance effects will be reversed.")) return;
@@ -115,9 +124,13 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
           const data = await res.json();
           throw new Error(data.error || "Failed to delete");
         }
-        mutate(`/api/rooms/${room._id}/stats`);
+        globalMutate(`/api/rooms/${room._id}/stats`);
         refetchWallet();
-        fetchTickets(1, false); // Reset to page 1 after delete
+        mutateTickets(); // Revalidate SWR cache
+        // If we want to reset extraPages on delete (safest to avoid inconsistencies)
+        setExtraPages([]);
+        setManualHasMore(null);
+        setCurrentPage(1);
       } catch (e: any) {
         console.error("Delete failed:", e);
         alert(e.message || "Something went wrong.");
@@ -138,8 +151,8 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
     );
   }
 
-  if (error) {
-    return <div className="text-center py-12 text-sm text-red-500">{error}</div>;
+  if (swrError) {
+    return <div className="text-center py-12 text-sm text-red-500">{swrError.message || "Something went wrong."}</div>;
   }
 
   const detailDrawer = detailTicket && (
@@ -338,7 +351,7 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
       {hasMore && !loadingMore && (
         <div className="flex justify-center pt-3 pb-2">
           <button
-            onClick={() => fetchTickets(currentPage + 1, true)}
+            onClick={fetchMore}
             className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer px-5 py-2 rounded-lg hover:bg-[var(--border)]/50"
           >
             Load more
@@ -381,7 +394,10 @@ export default function RoomTickets({ room, currentUserId, refreshTrigger }: Roo
         onClose={() => setEditTicket(null)}
         onSuccess={() => {
           setEditTicket(null);
-          fetchTickets(1, false);
+          mutateTickets();
+          setExtraPages([]);
+          setManualHasMore(null);
+          setCurrentPage(1);
         }}
         room={room}
         currentUserId={currentUserId}

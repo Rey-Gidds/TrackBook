@@ -3,14 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import MinimalBarChart from "./MinimalBarChart";
 import { useWallet } from "@/context/WalletContext";
-import { convertCurrency } from "@/utils/currencyConverter";
 import { formatCurrency } from "@/utils/formatCurrency";
 import Modal from "./Modal";
 import { aggregateExpenses } from "@/utils/aggregateExpenses";
 
 type TimeFrame = "Daily" | "Weekly" | "Monthly";
 
-const PREDEFINED_CATEGORIES = ["Food", "Transport", "Rent", "Entertainment", "Utilities"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -28,7 +26,7 @@ const fetcher = async (url: string) => {
 export default function InsightsView() {
   const now = new Date();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("Monthly");
-  const { data: result, isLoading: loading } = useSWR<any>("/api/expenses?category=All&sort=desc&sortBy=date&limit=50", fetcher);
+  const { data: result, isLoading: loading, mutate, isValidating } = useSWR<any>("/api/expenses?category=All&sort=desc&sortBy=date&limit=50", fetcher);
   const expenses = Array.isArray(result) ? result : (result?.data ?? []);
   const { walletCurrency } = useWallet();
   
@@ -119,6 +117,27 @@ export default function InsightsView() {
 
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => mutate()}
+            disabled={isValidating}
+            className="hidden md:flex items-center justify-center p-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-full text-[var(--muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all cursor-pointer group shadow-sm disabled:opacity-50 active:scale-95"
+            title="Refresh Insights"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="3" 
+              className={`${isValidating ? "animate-spin text-[var(--accent)]" : "group-hover:rotate-180"} transition-all duration-500`}
+            >
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+            </svg>
+          </button>
+
+          <button 
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-full text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all cursor-pointer group shadow-sm"
           >
@@ -176,15 +195,35 @@ export default function InsightsView() {
 
 
 
-      {/* Mobile Floating Action Button for Configure */}
-      <div className="fixed bottom-20 left-0 w-full px-4 md:hidden z-30 flex justify-center">
+      {/* Mobile Floating Action Button for Configure + Refresh */}
+      <div className="fixed bottom-20 left-0 w-full px-4 md:hidden z-30 flex justify-center gap-2">
         <button 
            onClick={() => setIsDrawerOpen(true)}
-           className="flex items-center gap-2 px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-full text-xs font-bold shadow-[0_8px_30px_rgb(0,0,0,0.12)] uppercase tracking-widest text-[var(--foreground)]"
+           className="flex items-center gap-2 px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-full text-xs font-bold shadow-[0_8px_30px_rgb(0,0,0,0.12)] uppercase tracking-widest text-[var(--foreground)] active:scale-95 transition-all"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14V8"/><path d="M12 18h.01"/><path d="M16 12 12 8 8 12"/></svg>
           Configure View
         </button>
+        <button 
+            onClick={() => mutate()}
+            disabled={isValidating}
+            className="flex items-center justify-center w-11 h-11 bg-[var(--surface)] border border-[var(--border)] rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] text-[var(--muted)] active:scale-95 transition-all disabled:opacity-50"
+            title="Refresh Insights"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="3" 
+              className={`${isValidating ? "animate-spin text-[var(--accent)]" : ""} transition-all duration-500`}
+            >
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+            </svg>
+          </button>
       </div>
 
       {/* Configuration Drawer */}

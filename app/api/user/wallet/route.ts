@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getCachedSession } from "@/lib/cachedSession";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import mongoose from "mongoose";
@@ -6,9 +7,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    const session = await getCachedSession(await headers());
 
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

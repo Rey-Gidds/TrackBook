@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getCachedSession } from "@/lib/cachedSession";
 import { connectDB } from "@/lib/db";
 import Room from "@/models/Room";
 import RoomBook from "@/models/RoomBook";
@@ -15,7 +16,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession(await headers());
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -62,7 +63,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession(await headers());
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
