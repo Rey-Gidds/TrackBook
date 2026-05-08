@@ -35,7 +35,6 @@ export default async function Home() {
           {/* Desktop Right Header */}
           <div className="hidden md:flex text-right items-center gap-6">
             <WalletBalanceDisplay 
-               initialBalance={(session.user as any).walletBalance} 
                currency={(session.user as any).currency || "INR"}
             />
             <DownloadLink variant="icon" />

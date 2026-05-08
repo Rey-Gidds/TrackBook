@@ -5,7 +5,24 @@ export type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 // Module-level cache for session lookups
 const sessionCache = new Map<string, { session: Session; timestamp: number }>();
-const TTL = 5000; // 5 seconds cache
+const TTL = 30000; // 30 seconds cache
+
+/**
+ * Manually removes a session from the cache.
+ * Useful for logouts or permission changes.
+ */
+export function evictSession(headers: Headers) {
+  const cookieHeader = headers.get("cookie");
+  if (!cookieHeader) return;
+
+  const sessionCookie = cookieHeader
+    .split(";")
+    .find((c) => c.trim().startsWith("better-auth.session-token="))
+    ?.trim();
+
+  const cacheKey = sessionCookie || cookieHeader;
+  sessionCache.delete(cacheKey);
+}
 
 /**
  * Caches session lookups per cookie token for a short TTL to reduce

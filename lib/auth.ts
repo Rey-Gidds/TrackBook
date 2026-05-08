@@ -79,10 +79,6 @@ export const auth = betterAuth({
 
     user: {
         additionalFields: {
-            walletBalance: {
-                type: "number",
-                defaultValue: 0,
-            },
             currency: {
                 type: "string",
                 defaultValue: "INR",

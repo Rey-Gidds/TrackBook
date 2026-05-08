@@ -4,19 +4,13 @@ import { useWallet } from "@/context/WalletContext";
 import { useSession } from "@/lib/auth-client";
 
 interface WalletBalanceDisplayProps {
-  initialBalance?: number;
   currency?: string;
 }
 
-export default function WalletBalanceDisplay({ initialBalance, currency }: WalletBalanceDisplayProps) {
+export default function WalletBalanceDisplay({ currency }: WalletBalanceDisplayProps) {
   const { walletBalance, walletCurrency, loading } = useWallet();
-  const { isPending } = useSession();
 
-  // Use the context balance if we have one, otherwise fallback to the initialBalance from SSR
-  const displayBalance = (walletBalance === 0 && initialBalance !== undefined && !isPending) 
-    ? initialBalance 
-    : walletBalance;
-
+  const displayBalance = walletBalance;
   const displayCurrency = walletCurrency || currency || "INR";
 
   return (

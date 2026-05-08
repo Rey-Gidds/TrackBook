@@ -24,8 +24,8 @@ export default function AccountSheet({ session }: AccountSheetProps) {
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
 
-  // Display balance – prefer live context value, fall back to SSR
-  const displayBalance = walletBalance || (session?.user as any)?.walletBalance || 0;
+  // Display balance – prefer live context value
+  const displayBalance = walletBalance;
   const displayCurrency = walletCurrency || (session?.user as any)?.currency || "INR";
 
   return (

@@ -6,7 +6,31 @@ import mongoose from "mongoose";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
+export async function GET(req: Request) {
+    const session = await getCachedSession(await headers());
+
+    if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        await connectDB();
+        const user = await User.findById(session.user.id).select('walletBalance');
+        
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ 
+            walletBalance: user.walletBalance || 0 
+        });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
+
     const session = await getCachedSession(await headers());
 
     if (!session) {

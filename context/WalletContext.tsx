@@ -36,12 +36,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         try {
-            const res = await fetch("/api/auth/get-session");
-            if (!res.ok) throw new Error("Failed to fetch wallet balance");
-
-            const data = await res.json();
-            setWalletBalance(data.user?.walletBalance || 0);
-            setWalletCurrency(data.user?.currency || "INR");
+            // Fetch balance from dedicated wallet API
+            const balanceRes = await fetch("/api/user/wallet");
+            if (!balanceRes.ok) throw new Error("Failed to fetch wallet balance");
+            const balanceData = await balanceRes.json();
+            
+            // Currency is still in the session/user object, which is fine as it changes rarely
+            setWalletBalance(balanceData.walletBalance || 0);
+            setWalletCurrency(user?.currency || "INR");
         } catch (err: any) {
             setError(err.message);
             showNotification(err.message, "error");
