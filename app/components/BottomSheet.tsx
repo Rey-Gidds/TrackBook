@@ -11,7 +11,7 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ isOpen, onClose, title, children }: BottomSheetProps) {
-  const { sheetRef, style, handlers, isClosing } = useDraggableSheet({ isOpen, onClose });
+  const { sheetRef, style, handlers, isClosing, isMobile } = useDraggableSheet({ isOpen, onClose });
   const [isEntering, setIsEntering] = useState(true);
 
   useEffect(() => {
@@ -35,23 +35,28 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
       setIsEntering(true);
       const timer = setTimeout(() => setIsEntering(false), 600);
       return () => clearTimeout(timer);
+    } else {
+      setIsEntering(true);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const mobileAnimation = isEntering ? 'animate-sheet-in' : '';
+  const desktopAnimation = 'animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300';
+
   return (
     <div className={`fixed inset-0 z-[60] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 ${isClosing ? 'pointer-events-none' : ''}`}>
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-500 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-500 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-in fade-in'}`}
         onClick={onClose}
       />
       
       {/* Sheet Content */}
       <div 
         ref={sheetRef}
-        className={`relative bg-[var(--surface)] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border-t sm:border border-[var(--border)] shadow-2xl overflow-hidden ${isEntering ? 'animate-sheet-in' : ''} sm:animate-in sm:slide-in-from-bottom-0 sm:zoom-in-95 sm:fade-in max-h-[95vh] sm:max-h-[85vh] flex flex-col`}
+        className={`relative bg-[var(--surface)] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border-t sm:border border-[var(--border)] shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[85vh] flex flex-col ${isMobile ? mobileAnimation : desktopAnimation}`}
         style={style}
       >
         {/* Handle bar area (drag target) */}

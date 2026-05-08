@@ -11,6 +11,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dragStartY = useRef(0);
   const currentDragY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -18,11 +19,26 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
 
   useEffect(() => {
     if (isOpen) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setDragY(0);
+      currentDragY.current = 0;
+      setIsDragging(false);
+      setIsClosing(false);
+    } else {
       setDragY(0);
       currentDragY.current = 0;
       setIsDragging(false);
       setIsClosing(false);
     }
+
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
   }, [isOpen]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -67,13 +83,15 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
       // Animate out before closing
       const outDistance = typeof window !== 'undefined' ? window.innerHeight : 1000;
       setDragY(outDistance);
-      setTimeout(() => {
+      
+      closeTimerRef.current = setTimeout(() => {
         onClose();
         // Reset state after unmount so it's ready for next time
         setDragY(0);
         currentDragY.current = 0;
         setIsClosing(false);
-      }, 200);
+        closeTimerRef.current = null;
+      }, 80);
     } else {
       setDragY(0);
       currentDragY.current = 0;
@@ -81,8 +99,8 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
   };
 
   const style = isMobile ? {
-    transform: `translateY(${dragY}px)`,
-    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+    ...( (isDragging || isClosing || dragY !== 0) ? { transform: `translateY(${dragY}px)` } : {} ),
+    transition: isDragging ? 'none' : 'transform 0.08s cubic-bezier(0.4, 0, 1, 1)',
     pointerEvents: (isClosing ? 'none' : 'auto') as any
   } : {};
 
@@ -98,6 +116,7 @@ export function useDraggableSheet({ isOpen, onClose, threshold = 100 }: UseDragg
     dragY,
     isDragging,
     isClosing,
+    isMobile,
     style,
     handlers
   };
